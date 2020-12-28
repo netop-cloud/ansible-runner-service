@@ -263,15 +263,20 @@ def start_playbook(playbook_name, vars=None, filter=None, tags=None):
         _runner = run(**parms)
         # return the playbook run output
         out = open(_runner.stdout.name, "r").read()
-        # POC of fetching interfaces and returning them
+        # POC of fetching exported_vars and returning them
         # Every vars from playbook that start with 'export_' are exported into the result
-        interfaces = []
+        exported_vars = {}
         for host in inv_hosts:
-            interfaces.append(_runner.get_fact_cache(host)['export_fg_interfaces']['meta'])
+            cache = _runner.get_fact_cache(host)
+            for host_cache in cache.keys():
+                if str(host_cache).startswith('export_'):
+                    exported_var_name = str(host_cache)[len('export_'):]
+                    exported_vars.setdefault(exported_var_name,[])
+                    exported_vars[exported_var_name].append(cache[host_cache]['meta'])
         #
         r.status, r.data = "OK", {"status": _runner.status,
                                   "play_uuid": play_uuid,
-                                  "out": interfaces}
+                                  "exported_data": exported_vars}
         return r
     else:
         _thread, _runner = run_async(**parms)

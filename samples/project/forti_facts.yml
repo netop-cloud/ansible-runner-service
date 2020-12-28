@@ -11,6 +11,7 @@
     ansible_httpapi_use_ssl: yes
     ansible_httpapi_validate_certs: no
     ansible_httpapi_port: 443
+#    wan_interface: {{ wan }}
     vdom: "root"
   tasks:
     - name: gather system interface
@@ -18,11 +19,15 @@
         vdom: "{{ vdom }}"
         access_token: "{{ fortios_access_token }}"
         selector: system_interface
-      register: results
+      register: interfaces
     - name: Save interfaces to cache
       set_fact:
-        export_fg_interfaces: "{{ results }}"
+        export_fg_interfaces: "{{ interfaces }}"
         cacheable: yes
+    - name: Combine results
+      combine_results:
+        prev_result: interfaces
+
     # - debug:
     #     msg: "{{results}}"
     # debug:
@@ -30,5 +35,5 @@
 
     - name: Copy ansible facts to a file.
       copy:
-        content: "{{ results }}"
+        content: "{{ interfaces }}"
         dest: /tmp/ansible_facts_details.json

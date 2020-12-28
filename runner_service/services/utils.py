@@ -41,4 +41,4 @@ class APIResponse(object):
         self.status = ''
         self.msg = ''
         self.data = dict()
-        self.out = ''
+        self.exported_data = ''

@@ -185,7 +185,7 @@ def _run_playbook(playbook_name, tags=None):
 
     play_uuid = response.data.get('play_uuid', None)
     status = response.data.get('status', None)
-    out = response.data.get('out', None)
+    out = response.data.get('exported_data', None)
     msg = ("Playbook {}, UUID={} initiated :"
            " status={}".format(playbook_name,
                                play_uuid,
@@ -197,10 +197,10 @@ def _run_playbook(playbook_name, tags=None):
         logger.error(msg)
 
     if play_uuid:
-        r.status, r.msg, r.data, r.out = "STARTED", status, {"play_uuid": play_uuid}, out
+        r.status, r.msg, r.data, r.exported_data = "STARTED", status, {"play_uuid": play_uuid}, out
         return r
     else:
-        r.status, r.msg, r.out = "FAILED", "Runner thread failed to start", out
+        r.status, r.msg, r.exported_data = "FAILED", "Runner thread failed to start", out
         return r
 
 

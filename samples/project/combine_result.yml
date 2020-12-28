@@ -1,0 +1,20 @@
+- name: Combine Result Playbook
+  hosts: all
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: Dummy result
+      dummy:
+      register: dummy_var
+
+    - name: Combine results
+      combine_results:
+        prev_result: "{{ dummy_var }}"
+    - name: Export results
+      set_fact:
+        export_dummy_result: "{{ dummy_var }}"
+        cacheable: yes
+
+    - debug: var=dummy_var
+
+
