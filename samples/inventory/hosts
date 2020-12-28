@@ -1,0 +1,29 @@
+#[fortigateslab]
+#fortigate01 ansible_host=84.228.120.148 fortios_access_token=0Njmb11j06f779Qk33yhQ4bxt5psqz
+#
+#[fortigateslab:vars]
+#ansible_network_os=fortinet.fortios.fortios
+
+
+
+#---
+#all:
+#  hosts:
+#    fortigate01:
+#      ansible_host: 84.228.120.148
+#      ansible_network_os: fortinet.fortios.fortios
+#      fortios_access_token: 0Njmb11j06f779Qk33yhQ4bxt5psqz
+all:
+  children:
+    fortigateslab:
+      hosts:
+        fortigate01:
+          ansible_host: 84.228.120.148
+      vars:
+        ansible_network_os: fortinet.fortios.fortios
+        fortios_access_token: 0Njmb11j06f779Qk33yhQ4bxt5psqz
+#[fortigateslab]
+#fortigate01 ansible_host=84.228.120.148 fortios_access_token=0Njmb11j06f779Qk33yhQ4bxt5psqz
+#
+#[fortigateslab:vars]
+#ansible_network_os=fortinet.fortios.fortios

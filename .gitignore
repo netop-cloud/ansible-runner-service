@@ -17,3 +17,14 @@ lib*
 pip-self*
 .py[cod]
 __pycache__
+*.log
+out/artifacts/samples/inventory/hosts/rc
+out/artifacts/samples/inventory/hosts/status
+out/artifacts/samples/inventory/hosts/stdout
+ansible-runner-service.log.1
+ansible-runner-service.log.2
+.DS_Store
+ansible_runner_service.crt
+ansible_runner_service.key
+samples/env/ssh_key
+samples/env/ssh_key.pub

@@ -1,21 +1,24 @@
-
 import os
 import glob
 import uuid
 import time
 import datetime
 import getpass
+from distutils.util import strtobool
 
-from ansible_runner import run_async
+from ansible_runner import run_async, run
 from ansible_runner.exceptions import AnsibleRunnerException
 from runner_service import configuration
 from runner_service.cache import runner_cache, runner_stats
+
 from .utils import APIResponse
 from ..utils import fread
+from ..inventory import AnsibleInventory
 
 from ..cache import event_cache
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,13 +54,13 @@ def get_status(play_uuid):
 
         if not os.path.exists(pb_artifacts):
             r.status, r.msg = "NOTFOUND", \
-                            "Playbook with UUID {} not found".format(play_uuid)
+                              "Playbook with UUID {} not found".format(play_uuid)
             logger.info("Request for playbook state had non-existent "
                         "play_uuid '{}'".format(play_uuid))
             return r
 
         pb_status = os.path.join(pb_artifacts,
-                                "status")
+                                 "status")
 
         if os.path.exists(pb_status):
             # playbook execution has finished
@@ -65,15 +68,14 @@ def get_status(play_uuid):
             return r
         else:
             r.status, r.msg = "UNKNOWN", \
-                            "The artifacts directory is incomplete!"
+                              "The artifacts directory is incomplete!"
             logger.warning("Status Request for Play uuid '{}', found an incomplete"
-                        " artifacts directory...Possible ansible_runner "
-                        " error?".format(play_uuid))
+                           " artifacts directory...Possible ansible_runner "
+                           " error?".format(play_uuid))
             return r
 
 
 def list_playbooks():
-
     r = APIResponse()
     pb_dir = os.path.join(configuration.settings.playbooks_root_dir,
                           "project")
@@ -139,7 +141,6 @@ def prune_runner_cache(current_runner):
 
 
 def cb_event_handler(event_data):
-
     logger.debug("cb_event_handler event_data={}".format(event_data))
 
     # first look at the event to track overall stats in the runner_stats object
@@ -166,7 +167,7 @@ def cb_event_handler(event_data):
         # role is not a fixed attribute
         role_value = ''
         if 'role' in event_data:
-            role_value =  runner_cache[ident]['role'] = event_data['event_data'].get('role', '') # noqa
+            role_value = runner_cache[ident]['role'] = event_data['event_data'].get('role', '')  # noqa
         runner_cache[ident]['role'] = role_value
 
         if event_type.startswith("runner_on_"):
@@ -182,11 +183,11 @@ def cb_event_handler(event_data):
                 else:
                     # we have a valid failure to report
                     event_metadata = event_data['event_data']
-                    runner_cache[ident]['failures'][event_metadata.get('host')] = event_data # noqa
+                    runner_cache[ident]['failures'][event_metadata.get('host')] = event_data  # noqa
 
     # populate the event cache
     if 'runner_ident' in event_data and \
-       'uuid' in event_data and ident in event_cache:
+            'uuid' in event_data and ident in event_cache:
         event_cache[ident].update({event_data['uuid']: event_data})
 
     # regardless return true to ensure the data is written to artifacts dir
@@ -197,6 +198,7 @@ def start_playbook(playbook_name, vars=None, filter=None, tags=None):
     """ Initiate a playbook run """
 
     r = APIResponse()
+    inv_hosts = AnsibleInventory().hosts
     play_uuid = str(uuid.uuid1())
 
     settings = {"suppress_ansible_output": True}
@@ -252,12 +254,30 @@ def start_playbook(playbook_name, vars=None, filter=None, tags=None):
 
     parms['cmdline'] = ' '.join(cmdline)
 
-    _thread, _runner = run_async(**parms)
+    os.environ["ANSIBLE_NOCOLOR"] = "1"
+    os.environ["ANSIBLE_NOCOWS"] = "1"
 
+    _runner = None
+    # Run the playbook synchronously
+    if 'async' in filter and not strtobool(filter['async']):
+        _runner = run(**parms)
+        # return the playbook run output
+        out = open(_runner.stdout.name, "r").read()
+        # POC of fetching interfaces and returning them
+        # Every vars from playbook that start with 'export_' are exported into the result
+        interfaces = []
+        for host in inv_hosts:
+            interfaces.append(_runner.get_fact_cache(host)['export_fg_interfaces']['meta'])
+        #
+        r.status, r.data = "OK", {"status": _runner.status,
+                                  "play_uuid": play_uuid,
+                                  "out": interfaces}
+        return r
+    else:
+        _thread, _runner = run_async(**parms)
     # Workaround for ansible_runner logging, resetting the rootlogger level
     root_logger = logging.getLogger()
     root_logger.setLevel(10)
-
     delay = 0.1
     timeout = 5 / delay
     ctr = 0
@@ -281,11 +301,11 @@ def start_playbook(playbook_name, vars=None, filter=None, tags=None):
                                "status": _runner.status,
                                "current_task": None,
                                "current_task_metadata": {
-                                    "created": "",
-                                    "play_pattern": "",
-                                    "task_path": "",
-                                    "task_action": ""
-                                    },
+                                   "created": "",
+                                   "play_pattern": "",
+                                   "task_path": "",
+                                   "task_action": ""
+                               },
                                "role": "",
                                "last_task_num": None,
                                "start_epoc": time.time(),

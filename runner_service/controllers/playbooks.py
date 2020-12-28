@@ -1,5 +1,4 @@
-
-from flask_restful import request     # reqparse
+from flask_restful import request  # reqparse
 import threading
 import logging
 import re
@@ -134,7 +133,7 @@ def _run_playbook(playbook_name, tags=None):
     # TODO Move this function to the service package (services.playbook)
 
     # TODO We should use a list like this to restrict the query we support
-    valid_filter = ['limit', 'check']
+    valid_filter = ['limit', 'check', 'async']
 
     r = APIResponse()
 
@@ -154,7 +153,7 @@ def _run_playbook(playbook_name, tags=None):
     filter = request.args.to_dict()
     if not all([_k in valid_filter for _k in filter.keys()]):
         r.status, r.msg = "INVALID", "Bad request, supported " \
-                          "filters are: {}".format(','.join(valid_filter))
+                                     "filters are: {}".format(','.join(valid_filter))
         return r
 
     if 'limit' in filter:
@@ -186,6 +185,7 @@ def _run_playbook(playbook_name, tags=None):
 
     play_uuid = response.data.get('play_uuid', None)
     status = response.data.get('status', None)
+    out = response.data.get('out', None)
     msg = ("Playbook {}, UUID={} initiated :"
            " status={}".format(playbook_name,
                                play_uuid,
@@ -197,10 +197,10 @@ def _run_playbook(playbook_name, tags=None):
         logger.error(msg)
 
     if play_uuid:
-        r.status, r.msg, r.data = "STARTED", status, {"play_uuid": play_uuid}
+        r.status, r.msg, r.data, r.out = "STARTED", status, {"play_uuid": play_uuid}, out
         return r
     else:
-        r.status, r.msg = "FAILED", "Runner thread failed to start"
+        r.status, r.msg, r.out = "FAILED", "Runner thread failed to start", out
         return r
 
 
