@@ -28,3 +28,5 @@ ansible_runner_service.crt
 ansible_runner_service.key
 samples/env/ssh_key
 samples/env/ssh_key.pub
+ansible-runner-service.iml
+ansible-runner-service.iml.backup
